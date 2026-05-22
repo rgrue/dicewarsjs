@@ -57,6 +57,8 @@ var an2sn = new Array();	// エリア番号からダイススプライト番号�
 var bmax = 0;
 var activebutton = -1;
 var btn_func = new Array();
+var last_button_time = 0;
+var BUTTON_DEBOUNCE_MS = 300;
 
 // バトルクラス (battle class)
 var Battle = function(){
@@ -403,8 +405,12 @@ function mouseUpListner(e) {
 	canvas.style.cursor="default";  // マウスカーソルの変更 (change mouse cursor)
 	if( activebutton>=0 ){
 		if( btn_func[activebutton] != null ){
-			playSound("snd_button");
-			btn_func[activebutton]();
+			var now = Date.now();
+			if( now - last_button_time >= BUTTON_DEBOUNCE_MS ){
+				last_button_time = now;
+				playSound("snd_button");
+				btn_func[activebutton]();
+			}
 		}
 	}
 }
@@ -472,7 +478,7 @@ function start_title(){
 	spr[sn_title].gotoAndStop("title");
 
 	spr[sn_mes].visible = true;
-	spr[sn_mes].text = "Copyright (C) 2001 GAMEDESIGN";
+	spr[sn_mes].text = "Copyright (C) 2001 GAMEDESIGN\nModified by Chris Raff";
 	spr[sn_mes].color = "#aaaaaa";
 	spr[sn_mes].textAlign = "right";
 	spr[sn_mes].x = view_w*0.9;
