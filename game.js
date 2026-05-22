@@ -1,22 +1,22 @@
 var AreaData = function(){
-	this.size=0;		// 0.不在 1～
-	this.cpos=0;		// 中心セル
-	this.arm=0;		// 属軍
-	this.dice=0;		// サイコロ数
+	this.size=0;		// 0.不在 1～ rag: 0. Absent 1~
+	this.cpos=0;		// 中心セル rag: Center Cell
+	this.arm=0;		// 属軍 rag: Subordinate army
+	this.dice=0;		// サイコロ数 rag: Number of dice
 	
-	// 中心地を決めるための変数
+	// 中心地を決めるための変数 rag: Variables for determining the center
 	this.left=0;
 	this.right=0;
 	this.top=0;
 	this.bottom=0;
-	this.cx=0;		// left,right 中間地
-	this.cy=0;		// top,bottom 中間地
+	this.cx=0;		// left,right 中間地 rag: Midway
+	this.cy=0;		// top,bottom 中間地 rag: Midway
 	this.len_min=0;
 
-	// 周囲のライン用
-	this.line_cel = new Array(100);	// セル
-	this.line_dir = new Array(100);	// 方向(0～5)
-	this.join = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];	// 隣接フラグ32個
+	// 周囲のライン用 rag: For surrounding lines
+	this.line_cel = new Array(100);	// セル rag: cell
+	this.line_dir = new Array(100);	// 方向(0～5) rag: Direction (0 to 5)
+	this.join = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];	// 隣接フラグ32個 rag: 32 adjacent flags
 }
 
 
@@ -40,14 +40,14 @@ var HistoryData = function(){
 
 var Game = function(){
 	this.ai = [
-		null,
-		ai_example,
-		ai_defensive,
-		ai_defensive,
-		ai_default,
-		ai_default,
-		ai_default,
-		ai_default
+		null, // human
+		ai_random, // lime
+		ai_random, // green
+		ai_defensive, // pink
+		ai_defensive, // orange
+		ai_default, // cyan
+		ai_default, // yellow
+		ai_default // red
 	];
 
 	var i,j;
