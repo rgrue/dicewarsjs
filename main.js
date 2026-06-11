@@ -479,6 +479,7 @@ function start_title(){
 
 	spr[sn_mes].visible = true;
 	spr[sn_mes].text = "Copyright (C) 2001 GAMEDESIGN\nModified by Chris Raff and Robbie Grue";
+	spr[sn_mes].font = Math.floor(18*nume/deno)+"px Roboto";
 	spr[sn_mes].color = "#aaaaaa";
 	spr[sn_mes].textAlign = "right";
 	spr[sn_mes].x = view_w*0.9;
@@ -494,17 +495,12 @@ function start_title(){
 	spr[sn_btn+0].y = resize(390);
 	spr[sn_btn+0].visible = true;
 	btn_func[0] = make_map;
-	spr[sn_btn+1].x = resize(640);
-	spr[sn_btn+1].y = resize(490);
-	spr[sn_btn+1].visible = true;
-	btn_func[1] = toppage;
-
 	stage.update();
 
 	timer_func = null;
 	click_func = click_pmax;
 	move_func = null;
-	releaese_func = null;	
+	release_func = null;	
 }
 
 function click_pmax(){
@@ -564,6 +560,7 @@ function make_map(){
 	}
 
 	spr[sn_mes].visible = true;
+	spr[sn_mes].font = Math.floor(30*nume/deno)+"px Roboto";
 	spr[sn_mes].text = "Play this board?";
 	spr[sn_mes].color = "#000000";
 	spr[sn_mes].textAlign = "left";
@@ -585,7 +582,7 @@ function make_map(){
 	timer_func = null;
 	click_func = null;
 	move_func = null;
-	releaese_func = null;	
+	release_func = null;	
 }
 
 
@@ -736,7 +733,7 @@ function start_man(){
 	timer_func = null;
 	click_func = first_click;
 	move_func = null;
-	releaese_func = null;	
+	release_func = null;	
 }
 
 // クリックしたエリアの取得
@@ -806,13 +803,25 @@ function end_turn(){
 	spr[sn_from].visible = false;
 	spr[sn_to].visible = false;
 	spr[sn_mes].visible = false;
-	
+
 	timer_func = null;
 	click_func = null;
 	move_func = null;
-	releaese_func = null;
+	release_func = null;
 
 	start_supply();
+}
+
+function reset_game(){
+	timer_func = null;
+	click_func = null;
+	move_func = null;
+	release_func = null;
+	for( var i=0; i<bmax; i++ ) btn_func[i] = null;
+	stat = 0;
+	waitcount = 0;
+	spectate_mode = false;
+	start_title();
 }
 
 ////////////////////////////////////////////////////
@@ -832,7 +841,7 @@ function start_com(){
 	timer_func = com_from;
 	click_func = null;
 	move_func = null;
-	releaese_func = null;
+	release_func = null;
 }
 
 function com_from(){
@@ -928,7 +937,7 @@ function start_battle(){
 	timer_func = battle_dice;
 	click_func = null;
 	move_func = null;
-	releaese_func = null;
+	release_func = null;
 }
 
 function battle_dice(){
@@ -1090,7 +1099,7 @@ function start_supply(){
 	timer_func = supply_waiting;
 	click_func = null;
 	move_func = null;
-	releaese_func = null;	
+	release_func = null;	
 }
 
 function supply_waiting(){
@@ -1169,7 +1178,7 @@ function start_gameover(){
 	timer_func = gameover;
 	click_func = null;
 	move_func = null;
-	releaese_func = null;	
+	release_func = null;	
 }
 
 function gameover(){
@@ -1193,19 +1202,37 @@ function gameover(){
 		if( o.y>-70 ) o.y=-70;
 		if( waitcount>=160 ){
 			// ボタン (button)
-			spr[sn_btn+5].x = view_w/2 - resize(200);
-			spr[sn_btn+5].y = view_h/2 + resize(70);
-			spr[sn_btn+5].visible = true;
-			btn_func[5] = start_title;
-			spr[sn_btn+6].x = view_w/2;
-			spr[sn_btn+6].y = view_h/2 + resize(70);
-			spr[sn_btn+6].visible = true;
-			btn_func[6] = start_history;
+			var by = view_h/2 + resize(70);
 			if ( !spectate_mode ) {
-				spr[sn_btn+7].x = view_w/2 + resize(200);
-				spr[sn_btn+7].y = view_h/2 + resize(70);
+				spr[sn_btn+0].x = view_w/2 - resize(300);
+				spr[sn_btn+0].y = by;
+				spr[sn_btn+0].visible = true;
+				btn_func[0] = make_map;
+				spr[sn_btn+5].x = view_w/2 - resize(100);
+				spr[sn_btn+5].y = by;
+				spr[sn_btn+5].visible = true;
+				btn_func[5] = start_title;
+				spr[sn_btn+6].x = view_w/2 + resize(100);
+				spr[sn_btn+6].y = by;
+				spr[sn_btn+6].visible = true;
+				btn_func[6] = start_history;
+				spr[sn_btn+7].x = view_w/2 + resize(300);
+				spr[sn_btn+7].y = by;
 				spr[sn_btn+7].visible = true;
 				btn_func[7] = start_spectate;
+			} else {
+				spr[sn_btn+0].x = view_w/2 - resize(200);
+				spr[sn_btn+0].y = by;
+				spr[sn_btn+0].visible = true;
+				btn_func[0] = make_map;
+				spr[sn_btn+5].x = view_w/2;
+				spr[sn_btn+5].y = by;
+				spr[sn_btn+5].visible = true;
+				btn_func[5] = start_title;
+				spr[sn_btn+6].x = view_w/2 + resize(200);
+				spr[sn_btn+6].y = by;
+				spr[sn_btn+6].visible = true;
+				btn_func[6] = start_history;
 			}
 
 			waitcount=0;
@@ -1228,7 +1255,7 @@ function start_win(){
 	timer_func = win;
 	click_func = null;
 	move_func = null;
-	releaese_func = null;	
+	release_func = null;	
 }
 
 function win(){
@@ -1245,7 +1272,11 @@ function win(){
 	
 	if( a>=40 ){
 		timer_func = null;
-		spr[sn_btn+6].x = view_w/2;
+		spr[sn_btn+0].x = view_w/2 - resize(100);
+		spr[sn_btn+0].y = view_h/2 + resize(70);
+		spr[sn_btn+0].visible = true;
+		btn_func[0] = make_map;
+		spr[sn_btn+6].x = view_w/2 + resize(100);
 		spr[sn_btn+6].y = view_h/2 + resize(70);
 		spr[sn_btn+6].visible = true;
 		btn_func[6] = start_history;
@@ -1293,7 +1324,7 @@ function start_history(){
 	timer_func = play_history;
 	click_func = null;
 	move_func = null;
-	releaese_func = null;	
+	release_func = null;	
 }
 
 function play_history(){
@@ -1395,7 +1426,7 @@ function start_spectate(){
 	timer_func = start_player;
 	click_func = null;
 	move_func = null;
-	releaese_func = null;
+	release_func = null;
 }
 
 

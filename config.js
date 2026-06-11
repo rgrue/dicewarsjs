@@ -1,0 +1,8 @@
+var GAME_CONFIG = {
+	XMAX: 28,
+	YMAX: 32,
+	AREA_MAX: 32,
+	PMAX: 7,
+	PUT_DICE: 3,
+	STOCK_MAX: 64
+};

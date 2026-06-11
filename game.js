@@ -16,7 +16,7 @@ var AreaData = function(){
 	// 周囲のライン用 rag: For surrounding lines
 	this.line_cel = new Array(100);	// セル rag: cell
 	this.line_dir = new Array(100);	// 方向(0～5) rag: Direction (0 to 5)
-	this.join = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];	// 隣接フラグ32個 rag: 32 adjacent flags
+	this.join = new Array(GAME_CONFIG.AREA_MAX).fill(0);	// 隣接フラグ32個 rag: 32 adjacent flags
 }
 
 
@@ -39,16 +39,7 @@ var HistoryData = function(){
 }
 
 var Game = function(){
-	this.ai = [
-		null, // human
-		ai_random, // lime
-		ai_random, // green
-		ai_defensive, // pink
-		ai_defensive, // orange
-		ai_default, // cyan
-		ai_default, // yellow
-		ai_default // red
-	];
+	this.ai = [0,1,1,2,2,3,3,3]; // indices into AI_REGISTRY
 
 	var i,j;
 
@@ -75,8 +66,8 @@ var Game = function(){
 
 	
 	// セルデータ (cell data)
-	this.XMAX=28;
-	this.YMAX=32;
+	this.XMAX = GAME_CONFIG.XMAX;
+	this.YMAX = GAME_CONFIG.YMAX;
 	this.cel_max = this.XMAX * this.YMAX;
 	this.cel = new Array(this.cel_max);
 	// 隣接セルを入れた配列 (arrangement with adjacent cells)
@@ -86,9 +77,9 @@ var Game = function(){
 		for( j=0; j<6; j++ ) this.join[i].dir[j] = this.next_cel(i,j);
 	}
 	// エリアデータ (area data)
-	this.AREA_MAX = 32;	// 最大エリア数 (maximum number of areas)
+	this.AREA_MAX = GAME_CONFIG.AREA_MAX;	// 最大エリア数 (maximum number of areas)
 	this.adat = new Array();
-	for( i=0; i<32; i++ ) this.adat[i] = new AreaData();
+	for( i=0; i<this.AREA_MAX; i++ ) this.adat[i] = new AreaData();
 	// マップ作成時に使う (used for map creation)
 	this.num = new Array(this.cel_max);		// エリア通番 (area serial number)
 	for( i=0; i<this.cel_max; i++ ) this.num[i] = i;
@@ -99,9 +90,9 @@ var Game = function(){
 	this.chk = new Array(this.AREA_MAX);		// エリア描画線用 (for area drawing lines)
 	this.tc = new Array(this.AREA_MAX);		// 隣接エリア数で使用 (used in adjacent area number)
 	// ゲームデータ (game data)
-	this.pmax=7;		// プレイヤー数 (number of players)
+	this.pmax = GAME_CONFIG.PMAX;		// プレイヤー数 (number of players)
 	this.user=0;		// ユーザープレイヤー (user player)
-	this.put_dice=3;	// 配置ダイス平均数 (average number of placement dice)
+	this.put_dice = GAME_CONFIG.PUT_DICE;	// 配置ダイス平均数 (average number of placement dice)
 	this.jun = [0,1,2,3,4,5,6,7];			// 順番 (order)
 	this.ban = 0;			// 手番 現在のプレイヤーは player = jun[ban]; (the current player is player = jun[ban];)
 	this.area_from=0;	// 攻撃元 (attack source)
@@ -109,7 +100,7 @@ var Game = function(){
 	this.defeat=0;		// 0.攻撃失敗　1.攻撃成功 (0. attack failure, 1. attack success)
 	// プレイヤーデータ (player data)
 	this.player = new Array(8);
-	this.STOCK_MAX=64;	// 最大ストック数 (maximum number of stocks)
+	this.STOCK_MAX = GAME_CONFIG.STOCK_MAX;	// 最大ストック数 (maximum number of stocks)
 	// COM思考 (com thinking)
 	this.list_from = new Array(this.AREA_MAX*this.AREA_MAX);
 	this.list_to = new Array(this.AREA_MAX*this.AREA_MAX);
@@ -456,8 +447,8 @@ var Game = function(){
 	/////////////////////////////////////////////////////////////////////
 	// COM思考 (COM thinking - AI's move)
 	this.com_thinking = function() {
-		var ai_function = this.ai[ this.jun[this.ban] ]
-
+		var ai_function = AI_REGISTRY[ this.ai[ this.jun[this.ban] ] ].fn;
+		if( ai_function == null ) return 0;
 		return ai_function(this);
 	}
 
