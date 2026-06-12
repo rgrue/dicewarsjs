@@ -20,6 +20,7 @@ var nume = 1;
 var deno = 1;
 var view_w,view_h;
 var cel_w,cel_h;	// カードの大きさと (the size of the card)
+var map_x,map_y;	// screen offset applied to all area shapes and dice
 var ypos_mes;		// メッセージ、戦闘ダイスの位置 (message, position of battle dice)
 var ypos_arm;		// 各軍のステータス表示位置 (status display position of each army)
 var dot;			// 1ドットの大きさ (size of 1 dot)
@@ -45,6 +46,7 @@ var sn_gameover = 0;
 var sn_win = 0;
 var sn_title = 0;
 var sn_pmax = 0;
+var sn_size = 0;
 var sn_load = 0;
 var sn_mes = 0;
 var sn_btn = 0;
@@ -102,6 +104,8 @@ window.addEventListener("load", init);
 function init() {
 	var i,j,c,n;
 
+	org.view_w = GAME_CONFIG.VIEW_W;
+
 	canvas = document.getElementById("myCanvas");
 	stage = new createjs.Stage(canvas);
 	
@@ -150,15 +154,17 @@ function init() {
 	
 	// エリア描画 +2 (攻撃元と攻撃先) (area drawing +2 (attack source, destination))
 	sn_area = sn;
-	for( i=0; i<game.AREA_MAX+2; i++ ){
+	map_x = Math.floor((view_w - game.XMAX*cel_w) / 2);
+	map_y = Math.floor(resize(50));
+	for( i=0; i<GAME_CONFIG.MAX_AREA_MAX+2; i++ ){
 		spr[sn] = new createjs.Shape();
-		spr[sn].x = view_w/2-game.XMAX*cel_w/2-cel_w/4;
-		spr[sn].y = 50*nume/deno;
+		spr[sn].x = map_x;
+		spr[sn].y = map_y;
 		stage.addChild(spr[sn]);
 		sn++;
 	}
-	sn_from = sn_area + game.AREA_MAX;	// 攻撃元エリアのスプライト番号 (sprite number of attack area)
-	sn_to = sn_area + game.AREA_MAX+1;	// 攻撃先エリアのスプライト番号 (sprite number of attack destination)
+	sn_from = sn_area + GAME_CONFIG.MAX_AREA_MAX;	// 攻撃元エリアのスプライト番号 (sprite number of attack area)
+	sn_to = sn_area + GAME_CONFIG.MAX_AREA_MAX+1;	// 攻撃先エリアのスプライト番号 (sprite number of attack destination)
 	
 	// エリアダイス (area dice)
 	sn_dice = sn;
@@ -167,13 +173,13 @@ function init() {
 	var rect = new createjs.Rectangle(0,0,80,100);
 	builder.addMovieClip(mc, rect, nume/deno);
 	var spritesheet = builder.build();
-	for( i=0; i<game.AREA_MAX; i++ ){
+	for( i=0; i<GAME_CONFIG.MAX_AREA_MAX; i++ ){
 		spr[sn] = new createjs.Sprite(spritesheet);
 		stage.addChild(spr[sn]);
 		sn++;
 	}
 	// エリアダイス表示順 (area dice display order)
-	for( i=0; i<game.AREA_MAX; i++ ){
+	for( i=0; i<GAME_CONFIG.MAX_AREA_MAX; i++ ){
 		prio[i] = new Object();
 		prio[i].an = i;
 		prio[i].cpos = 0;	// 後で使う (to use later)
@@ -249,7 +255,7 @@ function init() {
 	spr[sn].y = ypos_mes;
 	spr[sn].x = view_w/2;
 	spr[sn].scaleX = spr[sn].scaleY = nume/deno;
-	for( i=0; i<game.STOCK_MAX; i++ ){
+	for( i=0; i<GAME_CONFIG.MAX_STOCK_MAX; i++ ){
 		var sd = new lib.mc();
 		var w = 40;
 		sd.x = -(6.5*w)+Math.floor(i/4)*w -(i%4)*w*0.5;
@@ -307,7 +313,23 @@ function init() {
 	}
 	stage.addChild(spr[sn]);
 	sn++;
-	
+
+	// マップサイズ選択 (map size selection)
+	sn_size = sn;
+	spr[sn] = new createjs.Container();
+	var size_names = ['small', 'medium', 'large'];
+	for( i=0; i<3; i++ ){
+		var stxt = new createjs.Text(size_names[i].toUpperCase(), Math.floor(32*nume/deno)+"px Anton", "#cccccc");
+		stxt.name = "sz"+i;
+		stxt.x = view_w/2 - 240*nume/deno + i*240*nume/deno;
+		stxt.y = view_h*0.72;
+		stxt.textAlign = "center";
+		stxt.textBaseline = "middle";
+		spr[sn].addChild(stxt);
+	}
+	stage.addChild(spr[sn]);
+	sn++;
+
 	// Loading用(web フォントを読んでおくため) (for loading (to read the web font))
 	sn_load = sn;
 	spr[sn] = new createjs.Text("Now loading...", Math.floor(24*nume/deno)+"px Anton", "#000000");
@@ -355,17 +377,36 @@ function init() {
 	createjs.Ticker.addEventListener("tick", onTick);
 	createjs.Ticker.setFPS(60);
 	
+	window.addEventListener('resize', onResize);
+	onResize();
+
 	if( soundon ){
 		// PCの場合にはサウンド読み込む (in the case of a pc, load sound)
 		var queue = new createjs.LoadQueue(false);
 		queue.installPlugin(createjs.Sound);
 		queue.loadManifest(manifest,true);
-		queue.addEventListener("fileload",handleFileLoad);  
-		queue.addEventListener("complete",handleComplete);		
+		queue.addEventListener("fileload",handleFileLoad);
+		queue.addEventListener("complete",handleComplete);
 	}else{
 		waitcount = 60;
 		timer_func = fake_loading;
 	}
+}
+
+function onResize(){
+	var iw = window.innerWidth;
+	var ih = window.innerHeight;
+	var ratio = view_w / view_h;
+	var css_w, css_h;
+	if( iw/ih > ratio ){
+		css_h = ih;
+		css_w = Math.floor(ih * ratio);
+	}else{
+		css_w = iw;
+		css_h = Math.floor(iw / ratio);
+	}
+	canvas.style.width = css_w + 'px';
+	canvas.style.height = css_h + 'px';
 }
 
 function handleFileLoad(event){
@@ -467,13 +508,13 @@ function fake_loading(){
 
 function start_title(){
 	var i;
-	
+
 	for( i=0; i<sn_max; i++ ) spr[i].visible = false;
 
 	spectate_mode = false;
-	
+
 	spr[sn_title].visible = true;
-	spr[sn_title].x = 0;
+	spr[sn_title].x = (view_w - view_h) / 2;
 	spr[sn_title].y = 0;
 	spr[sn_title].gotoAndStop("title");
 
@@ -481,26 +522,27 @@ function start_title(){
 	spr[sn_mes].text = "Copyright (C) 2001 GAMEDESIGN\nModified by Chris Raff and Robbie Grue";
 	spr[sn_mes].font = Math.floor(18*nume/deno)+"px Roboto";
 	spr[sn_mes].color = "#aaaaaa";
-	spr[sn_mes].textAlign = "right";
-	spr[sn_mes].x = view_w*0.9;
-	spr[sn_mes].y = view_h*0.24;
-	
-	spr[sn_pmax].visible = true;
-	for( i=0; i<7; i++ ){
-		spr[sn_pmax].getChildByName("p"+i).color = (i==game.pmax-2)?"#aa0000":"#cccccc";
+	spr[sn_mes].textAlign = "center";
+	spr[sn_mes].x = view_w / 2;
+	spr[sn_mes].y = view_h * 0.96;
+
+	spr[sn_size].visible = true;
+	var size_names = ['small', 'medium', 'large'];
+	for( i=0; i<3; i++ ){
+		var o = spr[sn_size].getChildByName("sz"+i);
+		o.text = size_names[i].toUpperCase();
+		o.color = (size_names[i]==GAME_CONFIG.SIZE)?"#aa0000":"#cccccc";
+		o.x = view_w/2 - 240*nume/deno + i*240*nume/deno;
+		o.y = view_h * 0.84;
+		o.textAlign = "center";
 	}
-	
-	// ボタン (button)
-	spr[sn_btn+0].x = resize(640);
-	spr[sn_btn+0].y = resize(390);
-	spr[sn_btn+0].visible = true;
-	btn_func[0] = make_map;
+
 	stage.update();
 
 	timer_func = null;
-	click_func = click_pmax;
+	click_func = function(e){ click_size(e); };
 	move_func = null;
-	release_func = null;	
+	release_func = null;
 }
 
 function click_pmax(){
@@ -520,6 +562,110 @@ function click_pmax(){
 	stage.update();
 }
 
+function click_size(){
+	var size_names = ['small', 'medium', 'large'];
+	for( var i=0; i<3; i++ ){
+		var o = spr[sn_size].getChildByName("sz"+i);
+		var pt = o.globalToLocal(stage.mouseX, stage.mouseY);
+		if( Math.abs(pt.x)<(80*nume/deno) && Math.abs(pt.y)<(20*nume/deno) ){
+			if( size_names[i] !== GAME_CONFIG.SIZE ){
+				change_size(size_names[i]);
+			} else {
+				start_player_select();
+			}
+			return;
+		}
+	}
+}
+
+function change_size(new_size){
+	var prev_pmax = game.pmax;
+	localStorage.setItem('dicewars_size', new_size);
+	GAME_CONFIG.SIZE = new_size;
+	var preset = GAME_CONFIG.SIZES[new_size];
+	var xmax_cap = Math.floor((GAME_CONFIG.VIEW_W - 80) / GAME_CONFIG.CEL_W);
+	GAME_CONFIG.XMAX     = Math.min(preset.xmax, xmax_cap);
+	GAME_CONFIG.YMAX     = preset.ymax;
+	GAME_CONFIG.AREA_MAX = preset.area_max;
+	GAME_CONFIG.STOCK_MAX= preset.stock_max;
+	// cel_w and cel_h are fixed — no recomputation needed
+	var c = 0;
+	for( var i=0; i<GAME_CONFIG.YMAX; i++ ){
+		for( var j=0; j<GAME_CONFIG.XMAX; j++ ){
+			cpos_x[c] = j*cel_w;
+			if( i%2 ) cpos_x[c] += cel_w/2;
+			cpos_y[c] = i*cel_h;
+			c++;
+		}
+	}
+	map_x = Math.floor((view_w - GAME_CONFIG.XMAX*cel_w) / 2);
+	map_y = Math.floor(resize(50));
+	for( var i=0; i<GAME_CONFIG.MAX_AREA_MAX+2; i++ ){
+		spr[sn_area+i].x = map_x;
+		spr[sn_area+i].y = map_y;
+	}
+	game = new Game();
+	game.pmax = prev_pmax;
+	start_player_select();
+}
+
+function start_player_select(){
+	var i;
+	for( i=0; i<sn_max; i++ ) spr[i].visible = false;
+
+	spr[sn_title].visible = true;
+	spr[sn_title].x = (view_w - view_h) / 2;
+	spr[sn_title].y = 0;
+	spr[sn_title].gotoAndStop("title");
+
+	spr[sn_pmax].visible = true;
+	for( i=0; i<7; i++ ){
+		var p = spr[sn_pmax].getChildByName("p"+i);
+		p.color = (i==game.pmax-2)?"#aa0000":"#cccccc";
+		p.x = view_w/2 - 280*nume/deno + Math.floor(i%4)*(180*nume/deno);
+		p.y = view_h*0.84 + Math.floor(i/4)*(60*nume/deno);
+	}
+
+	spr[sn_btn+0].x = view_w/2 + view_h/4;
+	spr[sn_btn+0].y = resize(390);
+	spr[sn_btn+0].visible = true;
+	btn_func[0] = make_map;
+
+	spr[sn_size].visible = true;
+	var size_names = ['small', 'medium', 'large'];
+	for( i=0; i<3; i++ ){
+		var o = spr[sn_size].getChildByName("sz"+i);
+		if( size_names[i] === GAME_CONFIG.SIZE ){
+			o.text = "← " + size_names[i].toUpperCase();
+			o.color = "#aa0000";
+			o.x = view_w/2;
+			o.y = view_h * 0.96;
+			o.textAlign = "center";
+		} else {
+			o.color = "rgba(0,0,0,0)";
+		}
+	}
+
+	stage.update();
+	timer_func = null;
+	click_func = function(e){ click_pmax(e); click_back_to_size(e); };
+	move_func = null;
+	release_func = null;
+}
+
+function click_back_to_size(){
+	var size_names = ['small', 'medium', 'large'];
+	for( var i=0; i<3; i++ ){
+		if( size_names[i] !== GAME_CONFIG.SIZE ) continue;
+		var o = spr[sn_size].getChildByName("sz"+i);
+		var pt = o.globalToLocal(stage.mouseX, stage.mouseY);
+		if( Math.abs(pt.x)<(120*nume/deno) && Math.abs(pt.y)<(20*nume/deno) ){
+			start_title();
+			return;
+		}
+	}
+}
+
 ////////////////////////////////////////////////////
 // マップ作成画面 (map creation screen)
 ////////////////////////////////////////////////////
@@ -530,7 +676,29 @@ function make_map(){
 	for( i=0; i<sn_max; i++ ) spr[i].visible = false;
 
 	game.make_map();
-	
+
+	// Center the territory mass within the canvas
+	var min_gx = game.XMAX, max_gx = 0, min_gy = game.YMAX, max_gy = 0;
+	for( i=1; i<game.AREA_MAX; i++ ){
+		if( game.adat[i].size > 0 ){
+			if( game.adat[i].left  < min_gx ) min_gx = game.adat[i].left;
+			if( game.adat[i].right > max_gx ) max_gx = game.adat[i].right;
+			if( game.adat[i].top   < min_gy ) min_gy = game.adat[i].top;
+			if( game.adat[i].bottom> max_gy ) max_gy = game.adat[i].bottom;
+		}
+	}
+	var used_w = (max_gx - min_gx + 1) * cel_w + cel_w/2;
+	var used_h = (max_gy - min_gy + 1) * cel_h;
+	map_x = Math.floor((view_w - used_w) / 2 - min_gx * cel_w);
+	// Pin territory top to 50px, but pull up if needed to keep 80px clearance before HUD
+	var territory_top = Math.min(resize(50), ypos_mes - resize(80) - used_h);
+	territory_top = Math.max(territory_top, resize(20));
+	map_y = Math.floor(territory_top - min_gy * cel_h);
+	for( i=0; i<GAME_CONFIG.MAX_AREA_MAX+2; i++ ){
+		spr[sn_area+i].x = map_x;
+		spr[sn_area+i].y = map_y;
+	}
+
 	// ダイスの表示順
 	for( i=0; i<game.AREA_MAX; i++ ){
 		n = prio[i].an;
@@ -633,8 +801,8 @@ function draw_areadice(sn,area){
 	}
 	spr[sn].visible = true;
 	var n = game.adat[area].cpos;
-	spr[sn].x = Math.floor(cpos_x[n] + 6*nume/deno);
-	spr[sn].y = Math.floor(cpos_y[n] - 10*nume/deno);
+	spr[sn].x = Math.floor(map_x + cpos_x[n] - resize(29));
+	spr[sn].y = Math.floor(map_y + cpos_y[n] - resize(60));
 	spr[sn].gotoAndStop(game.adat[area].arm*10+game.adat[area].dice-1);
 }
 
@@ -1085,7 +1253,7 @@ function start_supply(){
 	}
 	
 	spr[sn_supply].visible = true;
-	for( var i=0; i<game.STOCK_MAX; i++ ){
+	for( var i=0; i<GAME_CONFIG.MAX_STOCK_MAX; i++ ){
 		if( i<game.player[pn].stock ){
 			spr[sn_supply].getChildAt(i).visible = true;
 			spr[sn_supply].getChildAt(i).gotoAndStop("d"+pn+"3");
@@ -1129,7 +1297,7 @@ function supply_dice(){
 	game.adat[an].dice++;
 	draw_areadice(an2sn[an],an);
 	
-	for( i=0; i<game.STOCK_MAX; i++ ){
+	for( i=0; i<GAME_CONFIG.MAX_STOCK_MAX; i++ ){
 		if( i<game.player[pn].stock ){
 			spr[sn_supply].getChildAt(i).visible = true;
 		}else{
