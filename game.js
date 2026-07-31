@@ -305,23 +305,6 @@ var Game = function(){
 			}
 		}
 
-		// エリア属軍を決める
-		for( i=0; i<this.AREA_MAX; i++ ) this.adat[i].arm = -1;
-		var arm=0;	// 属軍
-		var alist = new Array(this.AREA_MAX);	// エリアリスト
-		while( 1 ){
-			var c = 0;
-			for( i=1; i<this.AREA_MAX; i++ ){
-				if( this.adat[i].size == 0 ) continue;
-				if( this.adat[i].arm >= 0 ) continue;
-				alist[c] = i;
-				c++;
-			}
-			if( c==0 ) break;
-			var an = alist[Math.floor(Math.random()%c)];
-			this.adat[an].arm = arm;
-			arm++; if( arm>=this.pmax ) arm=0;
-		}
 		// エリア描画線のデータ作成
 		for( i=0; i<this.AREA_MAX; i++ ) this.chk[i] = 0;
 		for( i=0; i<this.cel_max; i++ ){
@@ -338,6 +321,32 @@ var Game = function(){
 					}
 				}
 			}
+		}
+
+		this.replay_map();
+	}
+	/////////////////////////////////////////////////////////////////////
+	// 同じマップのまま属軍とダイス配置だけ振り直す (reshuffle player assignment
+	// and dice placement on the current map, without regenerating geometry)
+	this.replay_map = function(){
+		var i,j;
+
+		// エリア属軍を決める
+		for( i=0; i<this.AREA_MAX; i++ ) this.adat[i].arm = -1;
+		var arm=0;	// 属軍
+		var alist = new Array(this.AREA_MAX);	// エリアリスト
+		while( 1 ){
+			var c = 0;
+			for( i=1; i<this.AREA_MAX; i++ ){
+				if( this.adat[i].size == 0 ) continue;
+				if( this.adat[i].arm >= 0 ) continue;
+				alist[c] = i;
+				c++;
+			}
+			if( c==0 ) break;
+			var an = alist[Math.floor(Math.random()%c)];
+			this.adat[an].arm = arm;
+			arm++; if( arm>=this.pmax ) arm=0;
 		}
 		// ダイス配置
 		var anum = 0;
@@ -364,10 +373,6 @@ var Game = function(){
 			this.adat[an].dice++;
 			p++; if( p>=this.pmax ) p=0;
 		}
-		for( i=0; i<this.AREA_MAX; i++ ){
-//			this.adat[i].dice = 8;//1 + Math.floor(Math.random()*8);
-		}
-		
 	}
 	/////////////////////////////////////////////////////////////////////
 	// 浸透してエリアを作る

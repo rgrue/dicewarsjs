@@ -345,7 +345,7 @@ function init() {
 	sn++;
 	
 	// ボタン (button)
-	var btxt = ["START","TOP PAGE","YES","NO","END TURN","TITLE","HISTORY","SPECTATE"];
+	var btxt = ["START","TOP PAGE","YES","NO","END TURN","TITLE","HISTORY","SPECTATE","REPLAY"];
 	bmax = btxt.length;
 	sn_btn = sn;
 	for( i=0; i<bmax; i++ ){
@@ -753,6 +753,26 @@ function make_map(){
 	release_func = null;	
 }
 
+
+// 同じマップで属軍とダイス配置だけ振り直してすぐ開始 (replay the same map with
+// player placement and dice reshuffled, skipping the "Play this board?" step)
+function replay_map(){
+	var i;
+
+	spectate_mode = false;
+	for( i=0; i<sn_max; i++ ) spr[i].visible = false;
+
+	game.replay_map();
+
+	for( i=0; i<game.AREA_MAX; i++ ){
+		draw_areashape(sn_area+i,i,0);
+	}
+	for( i=0; i<game.AREA_MAX; i++ ){
+		draw_areadice(sn_dice+i,prio[i].an);
+	}
+
+	start_game();
+}
 
 function draw_areashape( sn, area, paint_mode ){
 	var i,j;
@@ -1372,15 +1392,19 @@ function gameover(){
 			// ボタン (button)
 			var by = view_h/2 + resize(70);
 			if ( !spectate_mode ) {
-				spr[sn_btn+0].x = view_w/2 - resize(300);
+				spr[sn_btn+8].x = view_w/2 - resize(300);
+				spr[sn_btn+8].y = by;
+				spr[sn_btn+8].visible = true;
+				btn_func[8] = replay_map;
+				spr[sn_btn+0].x = view_w/2 - resize(150);
 				spr[sn_btn+0].y = by;
 				spr[sn_btn+0].visible = true;
 				btn_func[0] = make_map;
-				spr[sn_btn+5].x = view_w/2 - resize(100);
+				spr[sn_btn+5].x = view_w/2;
 				spr[sn_btn+5].y = by;
 				spr[sn_btn+5].visible = true;
 				btn_func[5] = start_title;
-				spr[sn_btn+6].x = view_w/2 + resize(100);
+				spr[sn_btn+6].x = view_w/2 + resize(150);
 				spr[sn_btn+6].y = by;
 				spr[sn_btn+6].visible = true;
 				btn_func[6] = start_history;
@@ -1389,15 +1413,19 @@ function gameover(){
 				spr[sn_btn+7].visible = true;
 				btn_func[7] = start_spectate;
 			} else {
-				spr[sn_btn+0].x = view_w/2 - resize(200);
+				spr[sn_btn+8].x = view_w/2 - resize(225);
+				spr[sn_btn+8].y = by;
+				spr[sn_btn+8].visible = true;
+				btn_func[8] = replay_map;
+				spr[sn_btn+0].x = view_w/2 - resize(75);
 				spr[sn_btn+0].y = by;
 				spr[sn_btn+0].visible = true;
 				btn_func[0] = make_map;
-				spr[sn_btn+5].x = view_w/2;
+				spr[sn_btn+5].x = view_w/2 + resize(75);
 				spr[sn_btn+5].y = by;
 				spr[sn_btn+5].visible = true;
 				btn_func[5] = start_title;
-				spr[sn_btn+6].x = view_w/2 + resize(200);
+				spr[sn_btn+6].x = view_w/2 + resize(225);
 				spr[sn_btn+6].y = by;
 				spr[sn_btn+6].visible = true;
 				btn_func[6] = start_history;
@@ -1440,11 +1468,15 @@ function win(){
 	
 	if( a>=40 ){
 		timer_func = null;
-		spr[sn_btn+0].x = view_w/2 - resize(100);
+		spr[sn_btn+8].x = view_w/2 - resize(200);
+		spr[sn_btn+8].y = view_h/2 + resize(70);
+		spr[sn_btn+8].visible = true;
+		btn_func[8] = replay_map;
+		spr[sn_btn+0].x = view_w/2;
 		spr[sn_btn+0].y = view_h/2 + resize(70);
 		spr[sn_btn+0].visible = true;
 		btn_func[0] = make_map;
-		spr[sn_btn+6].x = view_w/2 + resize(100);
+		spr[sn_btn+6].x = view_w/2 + resize(200);
 		spr[sn_btn+6].y = view_h/2 + resize(70);
 		spr[sn_btn+6].visible = true;
 		btn_func[6] = start_history;
